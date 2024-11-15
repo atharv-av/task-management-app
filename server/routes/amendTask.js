@@ -1,31 +1,31 @@
 const dbConnection = require("../dbConnection/dbConnection.js");
 
-const getQrySQL = ({ taskID, fieldName, newValue }) => {
-  const allowedFields = ['task_title', 'task_desc', 'task_completed', 'task_scheduled_dt', 'priority_id'];
-  if (!allowedFields.includes(fieldName)) {
-    return { text: '', values: [] }; // Return empty query if the field is not allowed
+module.exports = (req, res) => {
+  const { taskID, fieldName, newValue } = req.body;
+
+  if (!taskID || !fieldName) {
+    return res.status(400).json({ error: "taskID and fieldName are required" });
   }
 
-  return {
-    text: `
-      UPDATE tasks SET ${fieldName} = $1 WHERE task_id = $2;
-    `,
-    values: [newValue === "null" ? null : newValue, taskID],
-  };
-};
-
-module.exports = (req, res) => {
-  const qry = getQrySQL(req.params);
+  const qry =
+    fieldName === "priority_desc"
+      ? {
+          text: `UPDATE tasks SET priority_id = (SELECT priority_id FROM task_priorities WHERE priority_desc = $1) WHERE task_id = $2;`,
+          values: [newValue, taskID],
+        }
+      : {
+          text: `UPDATE tasks SET ${fieldName} = $1 WHERE task_id = $2;`,
+          values: [newValue === "null" ? null : newValue, taskID],
+        };
 
   const client = dbConnection();
 
   client.query(qry.text, qry.values, (err) => {
-    if (err) {
-      console.error(err);
-      res.status(500).json({ error: "Error updating task" });
-    } else {
-      res.sendStatus(200);
-    }
     client.end();
+    if (err) {
+      console.error("Update failed:", err.stack);
+      return res.status(500).json({ error: "Failed to update task" });
+    }
+    res.status(200).json({ message: "Task updated successfully" });
   });
 };

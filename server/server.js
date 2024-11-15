@@ -1,30 +1,26 @@
 const express = require("express");
 const path = require("path");
+const bodyParser = require("body-parser");
 const app = express();
+
 const getAllTasks = require("./routes/getAllTasks.js");
 const addTask = require("./routes/addTask.js");
 const amendTask = require("./routes/amendTask.js");
 const deleteTask = require("./routes/deleteTask.js");
+
 const port = process.env.PORT || 8000;
 
-app.use(express.json());
+// Middleware
+app.use(bodyParser.json()); // Parse JSON bodies
+app.use(bodyParser.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
-app.get("/allTasks/:orderByField/:direction/:newTask", (req, res) => {
-  getAllTasks(req, res);
-});
+// Routes
+app.get("/allTasks", getAllTasks);
+app.post("/addTask", addTask);
+app.put("/amendTask", amendTask);
+app.delete("/deleteTask/:taskID", deleteTask);
 
-app.put("/amendTask/:taskID/:fieldName/:newValue", (req, res) => {
-  amendTask(req, res);
-});
-
-app.post("/addTask/:taskTitle", (req, res) => {
-  addTask(req, res);
-});
-
-app.delete("/deleteTask/:taskID", (req, res) => {
-  deleteTask(req, res);
-});
-
+// Serve client files in production
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../client/build")));
 
