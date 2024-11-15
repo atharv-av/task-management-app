@@ -5,7 +5,9 @@ const getAllTasks = require("./routes/getAllTasks.js");
 const addTask = require("./routes/addTask.js");
 const amendTask = require("./routes/amendTask.js");
 const deleteTask = require("./routes/deleteTask.js");
-const port = process.env.PORT;
+const port = process.env.PORT || 8000;
+
+app.use(express.json());
 
 app.get("/allTasks/:orderByField/:direction/:newTask", (req, res) => {
   getAllTasks(req, res);
@@ -31,4 +33,6 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-app.listen(port);
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});

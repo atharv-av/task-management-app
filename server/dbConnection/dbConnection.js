@@ -1,20 +1,23 @@
 const { Client } = require("pg");
 
 module.exports = () => {
-  let client;
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false, // Required for NeonDB
+    },
+  });
 
-  if (process.env.NODE_ENV === "development") {
-    client = new Client({
-      connectionString: process.env.DATABASE_URL,
-    });
-  } else {
-    client = new Client({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
-    });
-  }
+  console.log("Attempting to connect to NeonDB...");
+  console.log("Database connection string:", process.env.DATABASE_URL);
 
-  client.connect();
+  client.connect((err) => {
+    if (err) {
+      console.error("Error connecting to NeonDB:", err.message);
+    } else {
+      console.log("Connected to NeonDB successfully!");
+    }
+  });
 
   return client;
 };

@@ -31,8 +31,9 @@ class App extends Component {
   async getAllTasks(newTask) {
     const { orderByField, direction } = this.state.taskOrder;
     const res = await fetch(
-      `/allTasks/${orderByField}/${direction}/${newTask}`
+      `http://localhost:8080/allTasks/${orderByField}/${direction}/${newTask}`
     );
+    console.log({res})
     try {
       const data = await res.json();
       this.setState({
