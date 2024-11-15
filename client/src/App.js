@@ -3,7 +3,9 @@ import Task from "./components/Task";
 import NewTaskForm from "./components/NewTaskForm";
 import SortBy from "./components/SortBy";
 import "./css/App.css";
-import { encodeUpdateValue, convertToNumber } from "./utilityFunctions";
+import { convertToNumber } from "./utilityFunctions";
+import Header from "./components/Header";
+import { SignedIn } from "@clerk/clerk-react";
 
 class App extends Component {
   constructor(props) {
@@ -31,7 +33,7 @@ class App extends Component {
   async getAllTasks(newTask) {
     const { orderByField, direction } = this.state.taskOrder;
 
-    const url = `http://localhost:8000/allTasks`;
+    const url = `${process.env.REACT_APP_API_URL}/allTasks`;
     try {
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Failed to fetch tasks: ${res.statusText}`);
@@ -84,42 +86,42 @@ class App extends Component {
   }
 
   putTaskUpdate(e) {
-    const taskID = Number(e.target.parentNode.id);  // Get task ID
-    const fieldToUpdate = e.target.name;  // Get the field being updated
+    const taskID = Number(e.target.parentNode.id); // Get task ID
+    const fieldToUpdate = e.target.name; // Get the field being updated
     let updateValue;
-  
+
     // Get the value to update from the state
     this.state.tasks.forEach((task) => {
       if (task.task_id === taskID) updateValue = task[fieldToUpdate];
     });
-  
+
     // Special handling for task_scheduled_dt
     if (fieldToUpdate === "task_scheduled_dt" && updateValue === "") {
-      updateValue = null;  // Set it to null if the field is empty
+      updateValue = null; // Set it to null if the field is empty
     }
-  
+
     // Do not update if task title is empty
     if (fieldToUpdate === "task_title" && updateValue === "") return;
-  
+
     // If the value is empty and not task_scheduled_dt, set it to 'null' for backend
     if (updateValue === "" && fieldToUpdate !== "task_scheduled_dt") {
       updateValue = "null";
     }
-  
+
     // Prepare the payload
     const payload = {
       taskID: taskID,
       fieldName: fieldToUpdate,
       newValue: updateValue,
     };
-  
+
     // Send the PUT request with taskID, fieldName, and newValue in the body
-    fetch("http://localhost:8000/amendTask", {
+    fetch(`${process.env.REACT_APP_API_URL}/amendTask`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(payload),  // Send payload in the body
+      body: JSON.stringify(payload), // Send payload in the body
     })
       .then((response) => {
         if (response.status === 200) {
@@ -130,12 +132,10 @@ class App extends Component {
       })
       .catch((error) => console.error("Error updating task:", error));
   }
-  
-  
-  
+
   async deleteTask(taskID) {
     if (window.confirm("Are you sure that you want to delete this task?")) {
-      const url = `http://localhost:8000/deleteTask/${taskID}`;
+      const url = `${process.env.REACT_APP_API_URL}/deleteTask/${taskID}`;
       try {
         const res = await fetch(url, { method: "DELETE" });
         if (res.ok) {
@@ -159,41 +159,39 @@ class App extends Component {
     const { newTaskTitle } = this.state;
 
     if (!newTaskTitle.trim()) {
-        alert("Task title cannot be empty.");
-        return;
+      alert("Task title cannot be empty.");
+      return;
     }
 
-    const url = `http://localhost:8000/addTask`;
+    const url = `${process.env.REACT_APP_API_URL}/addTask`;
     const payload = { taskTitle: newTaskTitle.trim() };
 
     console.log("Creating task with payload:", payload);
 
     try {
-        const res = await fetch(url, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json", // Ensure content-type is set to application/json
-            },
-            body: JSON.stringify(payload), // Send as JSON
-        });
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json", // Ensure content-type is set to application/json
+        },
+        body: JSON.stringify(payload), // Send as JSON
+      });
 
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.error || "Failed to create task.");
-        }
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to create task.");
+      }
 
-        const data = await res.json();
-        console.log("Task created successfully:", data);
+      const data = await res.json();
+      console.log("Task created successfully:", data);
 
-        this.setState({ newTaskTitle: "" });
-        this.getAllTasks(); // Refresh tasks after successful creation
+      this.setState({ newTaskTitle: "" });
+      this.getAllTasks(); // Refresh tasks after successful creation
     } catch (error) {
-        console.error("Error creating task:", error.message);
-        alert(error.message);
+      console.error("Error creating task:", error.message);
+      alert(error.message);
     }
-}
-
-
+  }
 
   sortTasks(selectValue) {
     const { orderByField, direction } = selectValue;
@@ -279,13 +277,16 @@ class App extends Component {
       });
       return (
         <section className="tasksContainer">
-          <NewTaskForm
-            newTaskTitle={this.state.newTaskTitle}
-            handleNewTaskChange={this.handleNewTaskChange}
-            postNewTask={this.postNewTask}
-          />
-          {tasks.length > 0 ? <SortBy sortTasks={this.sortTasks} /> : null}
-          {tasks}
+          <Header />
+          <SignedIn>
+            <NewTaskForm
+              newTaskTitle={this.state.newTaskTitle}
+              handleNewTaskChange={this.handleNewTaskChange}
+              postNewTask={this.postNewTask}
+            />
+            {tasks.length > 0 ? <SortBy sortTasks={this.sortTasks} /> : null}
+            {tasks}
+          </SignedIn>
         </section>
       );
     }

@@ -3,11 +3,13 @@
   "version": "2.0.0",
   "private": true,
   "dependencies": {
+    "@clerk/clerk-react": "^5.15.5",
     "@fortawesome/fontawesome-svg-core": "^1.2.30",
     "@fortawesome/free-solid-svg-icons": "^5.14.0",
     "@fortawesome/react-fontawesome": "^0.1.11",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
+    "react-router-dom": "^6.28.0",
     "react-scripts": "3.4.3"
   },
   "devDependencies": {
