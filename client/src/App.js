@@ -6,6 +6,7 @@ import "./css/App.css";
 import { convertToNumber } from "./utilityFunctions";
 import Header from "./components/Header";
 import { SignedIn } from "@clerk/clerk-react";
+import toast, { Toaster } from "react-hot-toast";
 
 class App extends Component {
   constructor(props) {
@@ -47,6 +48,7 @@ class App extends Component {
         error: error.message,
         isFetched: true,
       });
+      toast.error('Failed to fetch tasks. Please try again.');
     }
   }
 
@@ -86,65 +88,75 @@ class App extends Component {
   }
 
   putTaskUpdate(e) {
-    const taskID = Number(e.target.parentNode.id); // Get task ID
-    const fieldToUpdate = e.target.name; // Get the field being updated
+    const taskID = Number(e.target.parentNode.id);
+    const fieldToUpdate = e.target.name;
     let updateValue;
 
-    // Get the value to update from the state
     this.state.tasks.forEach((task) => {
       if (task.task_id === taskID) updateValue = task[fieldToUpdate];
     });
 
-    // Special handling for task_scheduled_dt
     if (fieldToUpdate === "task_scheduled_dt" && updateValue === "") {
-      updateValue = null; // Set it to null if the field is empty
+      updateValue = null;
     }
 
-    // Do not update if task title is empty
     if (fieldToUpdate === "task_title" && updateValue === "") return;
 
-    // If the value is empty and not task_scheduled_dt, set it to 'null' for backend
     if (updateValue === "" && fieldToUpdate !== "task_scheduled_dt") {
       updateValue = "null";
     }
-
-    // Prepare the payload
     const payload = {
       taskID: taskID,
       fieldName: fieldToUpdate,
       newValue: updateValue,
     };
 
-    // Send the PUT request with taskID, fieldName, and newValue in the body
+    const loadingToast = toast.loading('Updating task...');
+
     fetch(`${process.env.REACT_APP_API_URL}/amendTask`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(payload), // Send payload in the body
+      body: JSON.stringify(payload),
     })
       .then((response) => {
         if (response.status === 200) {
-          console.log(`${fieldToUpdate} of task ${taskID} updated`);
+          toast.success('Task updated successfully', {
+            id: loadingToast,
+          });
         } else {
-          console.error("Failed to update task");
+          throw new Error("Failed to update task");
         }
       })
-      .catch((error) => console.error("Error updating task:", error));
+      .catch((error) => {
+        console.error("Error updating task:", error);
+        toast.error('Failed to update task', {
+          id: loadingToast,
+        });
+      });
   }
 
   async deleteTask(taskID) {
     if (window.confirm("Are you sure that you want to delete this task?")) {
       const url = `${process.env.REACT_APP_API_URL}/deleteTask/${taskID}`;
+      const loadingToast = toast.loading('Deleting task...');
+      
       try {
         const res = await fetch(url, { method: "DELETE" });
         if (res.ok) {
           this.getAllTasks(false);
+          toast.success('Task deleted successfully', {
+            id: loadingToast,
+          });
         } else {
           throw new Error(`Failed to delete task: ${res.statusText}`);
         }
       } catch (error) {
         console.error(error.message);
+        toast.error('Failed to delete task', {
+          id: loadingToast,
+        });
       }
     }
   }
@@ -159,22 +171,21 @@ class App extends Component {
     const { newTaskTitle } = this.state;
 
     if (!newTaskTitle.trim()) {
-      alert("Task title cannot be empty.");
+      toast.error('Task title cannot be empty');
       return;
     }
 
     const url = `${process.env.REACT_APP_API_URL}/addTask`;
     const payload = { taskTitle: newTaskTitle.trim() };
-
-    console.log("Creating task with payload:", payload);
+    const loadingToast = toast.loading('Creating new task...');
 
     try {
       const res = await fetch(url, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json", // Ensure content-type is set to application/json
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload), // Send as JSON
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -183,13 +194,17 @@ class App extends Component {
       }
 
       const data = await res.json();
-      console.log("Task created successfully:", data);
-
       this.setState({ newTaskTitle: "" });
-      this.getAllTasks(); // Refresh tasks after successful creation
+      this.getAllTasks();
+      
+      toast.success('Task created successfully', {
+        id: loadingToast,
+      });
     } catch (error) {
       console.error("Error creating task:", error.message);
-      alert(error.message);
+      toast.error(error.message || 'Failed to create task', {
+        id: loadingToast,
+      });
     }
   }
 
@@ -255,12 +270,14 @@ class App extends Component {
       return (
         <section>
           <p>Sorry, something went wrong. Please try again.</p>
+          <Toaster position="top-right" />
         </section>
       );
     } else if (!isFetched) {
       return (
         <section>
           <p>Your tasks are loading...</p>
+          <Toaster position="top-right" />
         </section>
       );
     } else {
@@ -286,6 +303,7 @@ class App extends Component {
             />
             {tasks.length > 0 ? <SortBy sortTasks={this.sortTasks} /> : null}
             {tasks}
+            <Toaster position="top-right" />
           </SignedIn>
         </section>
       );

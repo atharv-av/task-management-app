@@ -6,6 +6,7 @@ import App from "./App";
 import { ClerkProvider } from "@clerk/clerk-react";
 import SignInPage from "./pages/SignInPage";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 
 const PUBLISHABLE_KEY = process.env.REACT_APP_CLERK_PUBLISHABLE_KEY;
 
@@ -33,8 +34,8 @@ ReactDOM.render(
     afterSignOutUrl="/sign-in"
     signInForceRedirectUrl="/"
   >
-    <RouterProvider router={router} />
     <App />
+    <RouterProvider router={router} />
   </ClerkProvider>,
   document.getElementById("root")
 );
