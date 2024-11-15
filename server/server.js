@@ -8,6 +8,7 @@ const getAllTasks = require("./routes/getAllTasks.js");
 const addTask = require("./routes/addTask.js");
 const amendTask = require("./routes/amendTask.js");
 const deleteTask = require("./routes/deleteTask.js");
+const searchTasks = require("./routes/searchTasks.js");
 
 const port = process.env.PORT || 8000;
 
@@ -21,6 +22,7 @@ app.get("/allTasks", getAllTasks);
 app.post("/addTask", addTask);
 app.put("/amendTask", amendTask);
 app.delete("/deleteTask/:taskID", deleteTask);
+app.get("/searchTasks", searchTasks);
 
 // Serve client files in production
 if (process.env.NODE_ENV === "production") {
