@@ -30,11 +30,11 @@ class App extends Component {
 
   async getAllTasks(newTask) {
     const { orderByField, direction } = this.state.taskOrder;
-    const res = await fetch(
-      `http://localhost:8080/allTasks/${orderByField}/${direction}/${newTask}`
-    );
-    console.log({res})
+
+    const url = `http://localhost:8000/allTasks`;
     try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Failed to fetch tasks: ${res.statusText}`);
       const data = await res.json();
       this.setState({
         isFetched: true,
@@ -42,7 +42,7 @@ class App extends Component {
       });
     } catch (error) {
       this.setState({
-        error,
+        error: error.message,
         isFetched: true,
       });
     }
@@ -86,37 +86,34 @@ class App extends Component {
   putTaskUpdate(e) {
     const taskID = Number(e.target.parentNode.id);
     const fieldToUpdate = e.target.name;
-    let updateValue;
-
-    this.state.tasks.forEach((val) => {
-      if (val.task_id === taskID) updateValue = val[fieldToUpdate];
-    });
+    let updateValue = this.state.tasks.find((task) => task.task_id === taskID)[
+      fieldToUpdate
+    ];
 
     if (fieldToUpdate === "task_title" && updateValue === "") return;
-
-    if (fieldToUpdate === "task_title" || fieldToUpdate === "task_desc") {
-      updateValue = encodeUpdateValue(updateValue);
-    }
-
     if (updateValue === "") updateValue = "null";
 
-    fetch(`/amendTask/${taskID}/${fieldToUpdate}/${updateValue}`, {
-      method: "PUT",
-    });
+    const url = `http://localhost:8000/amendTask/${taskID}/${fieldToUpdate}/${encodeUpdateValue(
+      updateValue
+    )}`;
+    fetch(url, { method: "PUT" }).catch((err) =>
+      console.error("Update failed:", err)
+    );
   }
 
   async deleteTask(taskID) {
-    const response = window.confirm(
-      "Are you sure that you want to delete this task?"
-    );
-
-    if (response) {
-      const res = await fetch(`/deleteTask/${taskID}`, {
-        method: "DELETE",
-      });
-      if (res.status === 200) {
-        this.getAllTasks(false);
-      } 
+    if (window.confirm("Are you sure that you want to delete this task?")) {
+      const url = `http://localhost:8000/deleteTask/${taskID}`;
+      try {
+        const res = await fetch(url, { method: "DELETE" });
+        if (res.ok) {
+          this.getAllTasks(false);
+        } else {
+          throw new Error(`Failed to delete task: ${res.statusText}`);
+        }
+      } catch (error) {
+        console.error(error.message);
+      }
     }
   }
 
@@ -128,16 +125,19 @@ class App extends Component {
 
   async postNewTask() {
     const newTaskTitle = encodeUpdateValue(this.state.newTaskTitle);
-
     if (newTaskTitle === "") return;
 
-    const res = await fetch(`/addTask/${newTaskTitle}`, {
-      method: "POST",
-    });
-
-    if (res.status === 200) {
-      this.setState({ newTaskTitle: "" });
-      this.getAllTasks(true);
+    const url = `http://localhost:8000/addTask/${newTaskTitle}`;
+    try {
+      const res = await fetch(url, { method: "POST" });
+      if (res.ok) {
+        this.setState({ newTaskTitle: "" });
+        this.getAllTasks(true);
+      } else {
+        throw new Error(`Failed to add new task: ${res.statusText}`);
+      }
+    } catch (error) {
+      console.error(error.message);
     }
   }
 

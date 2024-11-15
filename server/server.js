@@ -1,6 +1,7 @@
 const express = require("express");
 const path = require("path");
 const bodyParser = require("body-parser");
+const cors = require("cors");
 const app = express();
 
 const getAllTasks = require("./routes/getAllTasks.js");
@@ -13,6 +14,7 @@ const port = process.env.PORT || 8000;
 // Middleware
 app.use(bodyParser.json()); // Parse JSON bodies
 app.use(bodyParser.urlencoded({ extended: true })); // Parse URL-encoded bodies
+app.use(cors());
 
 // Routes
 app.get("/allTasks", getAllTasks);
