@@ -33,9 +33,7 @@ class App extends Component {
     this.handleSearchResults = this.handleSearchResults.bind(this);
   }
 
-  async getAllTasks(newTask) {
-    const { orderByField, direction } = this.state.taskOrder;
-
+  async getAllTasks() {
     const url = `${process.env.REACT_APP_API_URL}/allTasks`;
     try {
       const res = await fetch(url);
@@ -199,7 +197,6 @@ class App extends Component {
         throw new Error(errorData.error || "Failed to create task.");
       }
 
-      const data = await res.json();
       this.setState({ newTaskTitle: "" });
       this.getAllTasks();
 
