@@ -84,28 +84,45 @@ class App extends Component {
   }
 
   putTaskUpdate(e) {
-    const taskID = Number(e.target.parentNode.id);
-    const fieldToUpdate = e.target.name;
+    const taskID = Number(e.target.parentNode.id);  // Get task ID
+    const fieldToUpdate = e.target.name;  // Get the field being updated
     let updateValue;
   
-    // Check which field is being updated and set the value accordingly
+    // Get the value to update from the state
     this.state.tasks.forEach((task) => {
       if (task.task_id === taskID) updateValue = task[fieldToUpdate];
     });
   
-    // If the field is empty, we do not want to update it
+    // Special handling for task_scheduled_dt
+    if (fieldToUpdate === "task_scheduled_dt" && updateValue === "") {
+      updateValue = null;  // Set it to null if the field is empty
+    }
+  
+    // Do not update if task title is empty
     if (fieldToUpdate === "task_title" && updateValue === "") return;
   
-    // If the update value is empty, it should be 'null' for the backend
-    if (updateValue === "") updateValue = "null";
+    // If the value is empty and not task_scheduled_dt, set it to 'null' for backend
+    if (updateValue === "" && fieldToUpdate !== "task_scheduled_dt") {
+      updateValue = "null";
+    }
   
-    // Send the PUT request with taskID, fieldToUpdate, and updateValue
-    fetch(`/amendTask/${taskID}/${fieldToUpdate}/${updateValue}`, {
+    // Prepare the payload
+    const payload = {
+      taskID: taskID,
+      fieldName: fieldToUpdate,
+      newValue: updateValue,
+    };
+  
+    // Send the PUT request with taskID, fieldName, and newValue in the body
+    fetch("http://localhost:8000/amendTask", {
       method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),  // Send payload in the body
     })
       .then((response) => {
         if (response.status === 200) {
-          // Successfully updated the task
           console.log(`${fieldToUpdate} of task ${taskID} updated`);
         } else {
           console.error("Failed to update task");
@@ -113,6 +130,8 @@ class App extends Component {
       })
       .catch((error) => console.error("Error updating task:", error));
   }
+  
+  
   
   async deleteTask(taskID) {
     if (window.confirm("Are you sure that you want to delete this task?")) {

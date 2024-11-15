@@ -41,6 +41,7 @@ const Task = (props) => {
         
         {/* Task Description */}
         <textarea
+        placeholder="Description"
           className="task__desc"
           name="task_desc"  // This should match the backend field "task_desc"
           rows="3"
