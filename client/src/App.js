@@ -7,6 +7,7 @@ import { convertToNumber } from "./utilityFunctions";
 import Header from "./components/Header";
 import { SignedIn } from "@clerk/clerk-react";
 import toast, { Toaster } from "react-hot-toast";
+import SearchTasks from "./components/SearchTasks";
 
 class App extends Component {
   constructor(props) {
@@ -29,6 +30,7 @@ class App extends Component {
     this.postNewTask = this.postNewTask.bind(this);
     this.deleteTask = this.deleteTask.bind(this);
     this.sortTasks = this.sortTasks.bind(this);
+    this.handleSearchResults = this.handleSearchResults.bind(this);
   }
 
   async getAllTasks(newTask) {
@@ -48,8 +50,12 @@ class App extends Component {
         error: error.message,
         isFetched: true,
       });
-      toast.error('Failed to fetch tasks. Please try again.');
+      toast.error("Failed to fetch tasks. Please try again.");
     }
+  }
+
+  handleSearchResults(results) {
+    this.setState({ tasks: results });
   }
 
   handleTaskUpdate(e) {
@@ -111,7 +117,7 @@ class App extends Component {
       newValue: updateValue,
     };
 
-    const loadingToast = toast.loading('Updating task...');
+    const loadingToast = toast.loading("Updating task...");
 
     fetch(`${process.env.REACT_APP_API_URL}/amendTask`, {
       method: "PUT",
@@ -122,7 +128,7 @@ class App extends Component {
     })
       .then((response) => {
         if (response.status === 200) {
-          toast.success('Task updated successfully', {
+          toast.success("Task updated successfully", {
             id: loadingToast,
           });
         } else {
@@ -131,7 +137,7 @@ class App extends Component {
       })
       .catch((error) => {
         console.error("Error updating task:", error);
-        toast.error('Failed to update task', {
+        toast.error("Failed to update task", {
           id: loadingToast,
         });
       });
@@ -140,13 +146,13 @@ class App extends Component {
   async deleteTask(taskID) {
     if (window.confirm("Are you sure that you want to delete this task?")) {
       const url = `${process.env.REACT_APP_API_URL}/deleteTask/${taskID}`;
-      const loadingToast = toast.loading('Deleting task...');
-      
+      const loadingToast = toast.loading("Deleting task...");
+
       try {
         const res = await fetch(url, { method: "DELETE" });
         if (res.ok) {
           this.getAllTasks(false);
-          toast.success('Task deleted successfully', {
+          toast.success("Task deleted successfully", {
             id: loadingToast,
           });
         } else {
@@ -154,7 +160,7 @@ class App extends Component {
         }
       } catch (error) {
         console.error(error.message);
-        toast.error('Failed to delete task', {
+        toast.error("Failed to delete task", {
           id: loadingToast,
         });
       }
@@ -171,13 +177,13 @@ class App extends Component {
     const { newTaskTitle } = this.state;
 
     if (!newTaskTitle.trim()) {
-      toast.error('Task title cannot be empty');
+      toast.error("Task title cannot be empty");
       return;
     }
 
     const url = `${process.env.REACT_APP_API_URL}/addTask`;
     const payload = { taskTitle: newTaskTitle.trim() };
-    const loadingToast = toast.loading('Creating new task...');
+    const loadingToast = toast.loading("Creating new task...");
 
     try {
       const res = await fetch(url, {
@@ -196,13 +202,13 @@ class App extends Component {
       const data = await res.json();
       this.setState({ newTaskTitle: "" });
       this.getAllTasks();
-      
-      toast.success('Task created successfully', {
+
+      toast.success("Task created successfully", {
         id: loadingToast,
       });
     } catch (error) {
       console.error("Error creating task:", error.message);
-      toast.error(error.message || 'Failed to create task', {
+      toast.error(error.message || "Failed to create task", {
         id: loadingToast,
       });
     }
@@ -301,6 +307,7 @@ class App extends Component {
               handleNewTaskChange={this.handleNewTaskChange}
               postNewTask={this.postNewTask}
             />
+            <SearchTasks onSearchResults={this.handleSearchResults} />
             {tasks.length > 0 ? <SortBy sortTasks={this.sortTasks} /> : null}
             {tasks}
             <Toaster position="top-right" />
