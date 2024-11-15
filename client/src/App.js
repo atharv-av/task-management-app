@@ -86,21 +86,34 @@ class App extends Component {
   putTaskUpdate(e) {
     const taskID = Number(e.target.parentNode.id);
     const fieldToUpdate = e.target.name;
-    let updateValue = this.state.tasks.find((task) => task.task_id === taskID)[
-      fieldToUpdate
-    ];
-
+    let updateValue;
+  
+    // Check which field is being updated and set the value accordingly
+    this.state.tasks.forEach((task) => {
+      if (task.task_id === taskID) updateValue = task[fieldToUpdate];
+    });
+  
+    // If the field is empty, we do not want to update it
     if (fieldToUpdate === "task_title" && updateValue === "") return;
+  
+    // If the update value is empty, it should be 'null' for the backend
     if (updateValue === "") updateValue = "null";
-
-    const url = `http://localhost:8000/amendTask/${taskID}/${fieldToUpdate}/${encodeUpdateValue(
-      updateValue
-    )}`;
-    fetch(url, { method: "PUT" }).catch((err) =>
-      console.error("Update failed:", err)
-    );
+  
+    // Send the PUT request with taskID, fieldToUpdate, and updateValue
+    fetch(`/amendTask/${taskID}/${fieldToUpdate}/${updateValue}`, {
+      method: "PUT",
+    })
+      .then((response) => {
+        if (response.status === 200) {
+          // Successfully updated the task
+          console.log(`${fieldToUpdate} of task ${taskID} updated`);
+        } else {
+          console.error("Failed to update task");
+        }
+      })
+      .catch((error) => console.error("Error updating task:", error));
   }
-
+  
   async deleteTask(taskID) {
     if (window.confirm("Are you sure that you want to delete this task?")) {
       const url = `http://localhost:8000/deleteTask/${taskID}`;
@@ -124,22 +137,44 @@ class App extends Component {
   }
 
   async postNewTask() {
-    const newTaskTitle = encodeUpdateValue(this.state.newTaskTitle);
-    if (newTaskTitle === "") return;
+    const { newTaskTitle } = this.state;
 
-    const url = `http://localhost:8000/addTask/${newTaskTitle}`;
-    try {
-      const res = await fetch(url, { method: "POST" });
-      if (res.ok) {
-        this.setState({ newTaskTitle: "" });
-        this.getAllTasks(true);
-      } else {
-        throw new Error(`Failed to add new task: ${res.statusText}`);
-      }
-    } catch (error) {
-      console.error(error.message);
+    if (!newTaskTitle.trim()) {
+        alert("Task title cannot be empty.");
+        return;
     }
-  }
+
+    const url = `http://localhost:8000/addTask`;
+    const payload = { taskTitle: newTaskTitle.trim() };
+
+    console.log("Creating task with payload:", payload);
+
+    try {
+        const res = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json", // Ensure content-type is set to application/json
+            },
+            body: JSON.stringify(payload), // Send as JSON
+        });
+
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || "Failed to create task.");
+        }
+
+        const data = await res.json();
+        console.log("Task created successfully:", data);
+
+        this.setState({ newTaskTitle: "" });
+        this.getAllTasks(); // Refresh tasks after successful creation
+    } catch (error) {
+        console.error("Error creating task:", error.message);
+        alert(error.message);
+    }
+}
+
+
 
   sortTasks(selectValue) {
     const { orderByField, direction } = selectValue;
